@@ -88,7 +88,9 @@ function Table:search(char)
     pos_start = entry[1],
     pos_end = entry[2],
     sign = entry[3],
-    comment = entry[4],
+    generator_factory = entry[4],
+    count = entry[5],
+    comment = entry[6],
   }
 end
 
