@@ -24,4 +24,17 @@ eaw.get("あ", { detail = true })
 --     pos_start = 12353,
 --     sign = "W"
 --   }
+
+eaw.version  ---> "18.0.0" (Unicode version of the bundled data)
+```
+
+## Updating the data
+
+`lua/eaw/generated.lua` is generated from the latest EastAsianWidth.txt.
+A GitHub Actions workflow checks it every week. When it changes, the workflow opens a pull request and merges it after the tests pass.
+You can also run it by hand:
+
+```sh
+nvim --clean --headless -l scripts/generate.lua  # downloads the latest file with curl
+nvim --clean --headless -l scripts/test.lua
 ```
