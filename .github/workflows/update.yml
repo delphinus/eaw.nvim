@@ -1,0 +1,52 @@
+name: Update EastAsianWidth
+
+on:
+  schedule:
+    # Every Monday at 00:00 UTC
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: stable
+      - name: Download EastAsianWidth.txt
+        run: curl -sSfL -o "$RUNNER_TEMP/EastAsianWidth.txt" https://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt
+      - name: Generate
+        run: nvim --clean --headless -l scripts/generate.lua "$RUNNER_TEMP/EastAsianWidth.txt"
+      # Pull requests created with GITHUB_TOKEN do not trigger other workflows,
+      # so the tests run here before the pull request is created.
+      - name: Test
+        run: nvim --clean --headless -l scripts/test.lua
+      - name: Read the version
+        id: version
+        run: echo "version=$(sed -n 's/^  version = "\(.*\)",$/\1/p' lua/eaw/generated.lua)" >> "$GITHUB_OUTPUT"
+      - id: pr
+        uses: peter-evans/create-pull-request@v8
+        with:
+          branch: update-east-asian-width
+          delete-branch: true
+          commit-message: Update EastAsianWidth.txt to ${{ steps.version.outputs.version }}
+          title: Update EastAsianWidth.txt to ${{ steps.version.outputs.version }}
+          body: |
+            Regenerated `lua/eaw/generated.lua` from the latest
+            [EastAsianWidth.txt](https://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt)
+            (Unicode ${{ steps.version.outputs.version }}).
+      # The tests above have already passed, so the pull request is merged right away.
+      # GitHub's auto-merge is not used: it would wait for checks from test.yml,
+      # which never run on pull requests created with GITHUB_TOKEN.
+      - name: Merge
+        if: steps.pr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.pull-request-number }}
+        run: gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --squash --delete-branch

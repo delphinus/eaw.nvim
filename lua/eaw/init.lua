@@ -1,5 +1,6 @@
 ---@class eaw
 ---@field get fun(char: string, opts: table?): string
+---@field version string Unicode version of the bundled EastAsianWidth.txt
 
 local Eaw = require "eaw.main"
 local Nvim = require "eaw.nvim"
@@ -11,6 +12,8 @@ return setmetatable({ eaw = eaw }, {
       return function(...)
         return eaw:get(...)
       end
+    elseif key == "version" then
+      return eaw.table.version
     end
     return function()
       eaw.nvim.log:error("unknown command: %s", key)
